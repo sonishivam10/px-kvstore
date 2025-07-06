@@ -8,6 +8,8 @@ This is a simple in-memory key-value store written in pure Python. It supports b
 
 - In-memory key-value store
 - HTTP API (using `http.server`)
+- Thread-safe access with `threading.Lock`
+- Logging support for all operations
 - Docker support
 - Unit tests using `unittest`
 - No external dependencies — standard library only
@@ -51,10 +53,10 @@ python3 test_kv_store.py
 
 
 ### Production Considerations
-If this were being prepared for real production use, I would:
-- Use persistent storage (e.g. SQLite or a flat file)
-- Add thread-safety with locks or queues (threading.Lock) (Allow Configurations to be Read-Write Heavy)
-- Support request logging and error tracing
+If this were being prepared for real production use, we should:
+- Use persistent storage (e.g. SQLite or a file)
+- Add thread-safety with locks or queues (threading.Lock - ✅) (Allow Configurations to be Read-Write Heavy)
+- Support request logging and error tracing (✅)
 - Add graceful shutdown handling (signal module)
 - Add authentication/authorization
 - Support for TTL (time-to-live) on keys

@@ -1,5 +1,14 @@
 import unittest
+import threading
+import logging
 from kv_store import KeyValueStore
+
+# Setup logging for test environment
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(threadName)s: %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 class TestKeyValueStore(unittest.TestCase):
     def setUp(self):
@@ -50,6 +59,40 @@ class TestKeyValueStore(unittest.TestCase):
         success, msg = self.store.delete("Automation")
         self.assertFalse(success)
         self.assertEqual(msg, "Key not found.")
+
+    def test_concurrent_access(self):
+        def worker(thread_id):
+            key = f"user-{thread_id}"
+            logger.info("Thread starting operations on key='%s'", key)
+
+            success, msg = self.store.create(key, f"init-{thread_id}")
+            logger.info("CREATE: key='%s' => %s", key, msg)
+
+            success, msg = self.store.update(key, f"updated-{thread_id}")
+            logger.info("UPDATE: key='%s' => %s", key, msg)
+
+            success, val = self.store.read(key)
+            if success:
+                logger.info("READ: key='%s' => %s", key, val)
+            else:
+                logger.warning("READ: key='%s' => %s", key, val)
+
+            success, msg = self.store.delete(key)
+            logger.info("DELETE: key='%s' => %s", key, msg)
+
+            logger.info("Thread finished operations on key='%s'", key)
+
+        threads = []
+        for i in range(10):  # 10 concurrent threads
+            t = threading.Thread(target=worker, args=(i,), name=f"Worker-{i}")
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        self.assertEqual(len(self.store.store), 0)
+
 
 if __name__ == '__main__':
     unittest.main()
