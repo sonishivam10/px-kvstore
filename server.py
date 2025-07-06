@@ -48,22 +48,24 @@ class SimpleKVHandler(BaseHTTPRequestHandler):
         if self.path != "/store":
             logger.warning("POST invalid path: %s", self.path)
             return self._send_json(404, {"error": "Not found"})
+        
         length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(length)
         try:
             data = json.loads(body)
             key = data["key"]
             value = data["value"]
+            ttl = data.get("ttl")
         except (KeyError, json.JSONDecodeError):
             logger.warning("POST invalid JSON: %s", body)
             return self._send_json(400, {"error": "Invalid JSON or missing fields"})
 
-        success, result = store.create(key, value)
+        success, result = store.create(key, value, ttl=int(ttl) if ttl else None)
         if success:
-            logger.info("POST created key='%s'", key)
+            logger.info("POST created key='%s' with ttl=%s", key, ttl)
             self._send_json(201, {"message": result})
         else:
-            logger.info("POST key='%s' already exists", key)
+            logger.info("POST failed: key='%s' already exists", key)
             self._send_json(400, {"message": result})
 
     def do_PUT(self):

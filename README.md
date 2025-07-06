@@ -9,9 +9,10 @@ This is a simple in-memory key-value store written in pure Python. It supports b
 - In-memory key-value store
 - HTTP API (using `http.server`)
 - Thread-safe access with `threading.Lock`
+- Key expiration with TTL (Time To Live)
 - Logging support for all operations
 - Docker support
-- Unit tests using `unittest`
+- Unit tests using `unittest`, including multi-threaded and TTL scenarios
 - No external dependencies — standard library only
 
 ---
@@ -43,6 +44,17 @@ docker run -p 8080:8080 kvstore
 python3 test_kv_store.py
 ```
 
+### TTL Support
+- You can set TTL (in seconds) for any key at creation:
+```bash
+curl -X POST http://localhost:8080/store \
+  -d '{"key":"session", "value":"PhysicsX", "ttl":3}' \
+  -H "Content-Type: application/json"
+```
+- After ttl seconds, the key expires and behaves as if it doesn't exist.
+- TTL is checked during read/update/delete (lazy cleanup)
+
+
 ### API Endpoints
 | Method | Endpoint         | Description           |
 | ------ | ---------------- | --------------------- |
@@ -55,11 +67,11 @@ python3 test_kv_store.py
 ### Production Considerations
 If this were being prepared for real production use, we should:
 - Use persistent storage (e.g. SQLite or a file)
-- Add thread-safety with locks or queues (threading.Lock - ✅) (Allow Configurations to be Read-Write Heavy)
-- Support request logging and error tracing (✅)
+- Add thread-safety with locks or queues (threading.Lock - ✅ [Done]) (Allow Configurations to be Read-Write Heavy)
+- Support request logging and error tracing (✅ [Done])
 - Add graceful shutdown handling (signal module)
 - Add authentication/authorization
-- Support for TTL (time-to-live) on keys
+- Support for TTL (time-to-live) on keys (✅[Done] )
 - Switch to async with asyncio and aiohttp or similar (if allowed to use third-party libs)
 
 ### Project Structure
