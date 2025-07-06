@@ -1,4 +1,4 @@
-# KeyValueStorePhysicsX (Python Standard Library Only)
+# KeyValueStore (Python Standard Library Only)
 
 This is a simple in-memory key-value store written in pure Python. It supports basic CRUD operations via an HTTP interface.
 
@@ -66,14 +66,18 @@ curl -X POST http://localhost:8080/store \
 | GET    | `/keys`           | List all non-expired keys |
 | GET    | `/metrics`        | View service stats (uptime, key counts) |
 
-### Production Considerations
+### Production Considerations (Not implemented due to time constraints)
 If this were being prepared for real production use, we should:
-- Use persistent storage (e.g. SQLite or a file)
-- Add thread-safety with locks or queues (threading.Lock - ✅ [Done]) (Allow Configurations to be Read-Write Heavy)
+- Add thread-safety with locks or queues (threading.Lock - ✅ [Done]) (Allow Configurations to be Read-Write Heavy - Todo)
 - Support request logging and error tracing (✅ [Done])
-- Add graceful shutdown handling (signal module)
-- Add authentication/authorization
 - Support for TTL (time-to-live) on keys (✅[Done] )
+- Use persistent storage (e.g. SQLite or a file)
+- Add authentication/authorization
+- Rate Limiting: Request throttling and quotas
+- Multi-key operations in single request
+- Event notifications for key changes
+- Multi-node support with consistent hashing
+- Add graceful shutdown handling (signal module)
 - Switch to async with asyncio and aiohttp or similar (if allowed to use third-party libs)
 
 ### Project Structure
