@@ -1,1 +1,74 @@
-# KeyValueStorePhysicsX
+# KeyValueStorePhysicsX (Python Standard Library Only)
+
+This is a simple in-memory key-value store written in pure Python. It supports basic CRUD operations via an HTTP interface.
+
+---
+
+## Features
+
+- In-memory key-value store
+- HTTP API (using `http.server`)
+- Docker support
+- Unit tests using `unittest`
+- No external dependencies — standard library only
+
+---
+
+## Getting Started
+
+### Run Locally
+
+```bash
+python3 server.py
+```
+
+### TEST IT
+```bash
+curl -X POST http://localhost:8080/store -d '{"key":"P", "value":"PhysicsX"}' -H "Content-Type: application/json"
+curl "http://localhost:8080/store?key=P"
+curl -X PUT http://localhost:8080/store -d '{"key":"P", "value":"PhysicsXKeyValueStore"}' -H "Content-Type: application/json"
+curl -X DELETE "http://localhost:8080/store?key=P"
+```
+
+### Run with Docker
+```bash
+docker build -t kvstore .
+docker run -p 8080:8080 kvstore
+```
+
+### Running Tests
+```bash
+python3 test_kv_store.py
+```
+
+### API Endpoints
+| Method | Endpoint         | Description           |
+| ------ | ---------------- | --------------------- |
+| POST   | `/store`         | Create key-value pair |
+| GET    | `/store?key=P` | Retrieve value        |
+| PUT    | `/store`         | Update value          |
+| DELETE | `/store?key=P` | Delete key            |
+
+
+### Production Considerations
+If this were being prepared for real production use, I would:
+- Use persistent storage (e.g. SQLite or a flat file)
+- Add thread-safety with locks or queues (threading.Lock) (Allow Configurations to be Read-Write Heavy)
+- Support request logging and error tracing
+- Add graceful shutdown handling (signal module)
+- Add authentication/authorization
+- Support for TTL (time-to-live) on keys
+- Switch to async with asyncio and aiohttp or similar (if allowed to use third-party libs)
+
+### Project Structure
+`kv_store/`
+ - `kv_store.py`          # In-memory store logic
+ - `server.py`            # HTTP server using standard library
+ - `test_kv_store.py`     # Unit tests
+ - `Dockerfile`           # Docker setup
+ - `README.md`           # You're reading it
+
+### Author
+- Shivam Soni
+- Email: sonishivama@gmail.com
+- [LinkedIn](https://linkedin.com/in/sonishivama)
