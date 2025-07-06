@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 store = KeyValueStore()
 
 class SimpleKVHandler(BaseHTTPRequestHandler):
+    """HTTP request handler for key-value operations."""
     def _set_headers(self, code=200):
         self.send_response(code)
         self.send_header("Content-type", "application/json")
@@ -25,26 +26,41 @@ class SimpleKVHandler(BaseHTTPRequestHandler):
         self.wfile.write(response)
 
     def do_GET(self):
+        """Handle GET requests."""
         parsed = urlparse(self.path)
-        if parsed.path != "/store":
+
+        if parsed.path == "/health":
+            logger.info("Health check ping")
+            return self._send_json(200, {"status": "ok"})
+
+        elif parsed.path == "/keys":
+            logger.info("Listing all valid keys")
+            keys = store.list_keys()
+            return self._send_json(200, {"keys": keys})
+        
+        elif parsed.path == "/store":
+            params = parse_qs(parsed.query)
+            key = params.get("key", [None])[0]
+            if not key:
+                logger.warning("GET missing key")
+                return self._send_json(400, {"error": "Missing 'key'"})
+
+            success, result = store.read(key)
+            if success:
+                logger.info("GET key='%s':%s", key, result)
+                self._send_json(200, {"key": key, "value": result})
+            else:
+                logger.info("GET key='%s' not found", key)
+                self._send_json(404, {"error": result})
+        elif parsed.path == "/metrics":
+            logger.info("Returning /metrics")
+            return self._send_json(200, store.metrics())
+        else:
             logger.warning("GET invalid path: %s", self.path)
             return self._send_json(404, {"error": "Not found"})
-        
-        params = parse_qs(parsed.query)
-        key = params.get("key", [None])[0]
-        if not key:
-            logger.warning("GET missing key")
-            return self._send_json(400, {"error": "Missing 'key'"})
-
-        success, result = store.read(key)
-        if success:
-            logger.info("GET key='%s':%s", key, result)
-            self._send_json(200, {"key": key, "value": result})
-        else:
-            logger.info("GET key='%s' not found", key)
-            self._send_json(404, {"error": result})
 
     def do_POST(self):
+        """Handle POST requests."""
         if self.path != "/store":
             logger.warning("POST invalid path: %s", self.path)
             return self._send_json(404, {"error": "Not found"})
@@ -69,6 +85,7 @@ class SimpleKVHandler(BaseHTTPRequestHandler):
             self._send_json(400, {"message": result})
 
     def do_PUT(self):
+        """Handle PUT requests."""
         if self.path != "/store":
             logger.warning("PUT invalid path: %s", self.path)
             return self._send_json(404, {"error": "Not found"})
@@ -91,6 +108,7 @@ class SimpleKVHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"message": result})
 
     def do_DELETE(self):
+        """Handle DELETE requests."""
         parsed = urlparse(self.path)
         if parsed.path != "/store":
             logger.warning("DELETE invalid path: %s", self.path)

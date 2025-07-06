@@ -62,7 +62,9 @@ curl -X POST http://localhost:8080/store \
 | GET    | `/store?key=P` | Retrieve value        |
 | PUT    | `/store`         | Update value          |
 | DELETE | `/store?key=P` | Delete key            |
-
+| GET    | `/health`         | Check service status   |
+| GET    | `/keys`           | List all non-expired keys |
+| GET    | `/metrics`        | View service stats (uptime, key counts) |
 
 ### Production Considerations
 If this were being prepared for real production use, we should:

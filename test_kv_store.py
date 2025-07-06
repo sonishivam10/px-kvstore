@@ -1,8 +1,11 @@
+import http
+import json
 import time
 import unittest
 import threading
 import logging
 from kv_store import KeyValueStore
+from server import run, store
 
 # Setup logging for test environment
 logging.basicConfig(
@@ -145,6 +148,62 @@ class TestKeyValueStoreTTL(unittest.TestCase):
         logger.info("Delete after TTL expiry: %s = %s", success, msg)
         self.assertFalse(success)
         self.assertEqual(msg, "Key not found.")
+
+class TestHTTPAPI(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.port = 8081
+        cls.server_thread = threading.Thread(target=run, kwargs={"port": cls.port}, daemon=True)
+        cls.server_thread.start()
+        time.sleep(1)  # Give the server time to start
+
+    def request(self, method, path, body=None):
+        conn = http.client.HTTPConnection("localhost", self.port)
+        headers = {"Content-Type": "application/json"} if body else {}
+        conn.request(method, path, body=json.dumps(body) if body else None, headers=headers)
+        response = conn.getresponse()
+        return response.status, json.loads(response.read())
+
+    def test_health_check(self):
+        logger.info("Testing /health endpoint")
+        status, data = self.request("GET", "/health")
+        logger.info("Status: %d, Response: %s", status, data)
+        self.assertEqual(status, 200)
+        self.assertEqual(data["status"], "ok")
+        logger.info("/health endpoint passed\n")
+
+    def test_keys_listing(self):
+        logger.info("Testing /keys endpoint")
+        logger.info("Creating keys: x, y (with TTL), z")
+        store.create("x", "1")
+        store.create("y", "2", ttl=1)
+        store.create("z", "3")
+
+        logger.info("Sleeping 1.2s to let TTL expire for 'y'")
+        time.sleep(1.2)  # 'y' expire
+        status, data = self.request("GET", "/keys")
+
+        logger.info("Status: %d, Response: %s", status, data)
+        self.assertEqual(status, 200)
+        self.assertIn("keys", data)
+        self.assertIn("x", data["keys"])
+        self.assertIn("z", data["keys"])
+        self.assertNotIn("y", data["keys"])
+        logger.info("/keys endpoint passed\n")
+
+    def test_metrics_endpoint(self):
+        logger.info("Testing /metrics endpoint")
+        status, data = self.request("GET", "/metrics")
+
+        logger.info("Status: %d, Response: %s", status, data)
+        self.assertEqual(status, 200)
+        self.assertIn("uptime_seconds", data)
+        self.assertIn("total_keys", data)
+        self.assertIn("valid_keys", data)
+        self.assertIn("ttl_keys", data)
+        self.assertGreaterEqual(data["uptime_seconds"], 0)
+
+        logger.info("/metrics endpoint passed\n")
 
 if __name__ == '__main__':
     unittest.main()
